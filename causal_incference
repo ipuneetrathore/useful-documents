@@ -5,3 +5,5 @@ Causality is used for introducing cause and effect relationships.
 X -> Y
 
 In summary, y and x are correlated or statistically dependent and therefore seeing x allows me to predict the value of y, but y is not caused by x so setting the value of x won't effect the distribution of y. Hence, p(y|x) and p(y|do(x)) behave very differently. This simple example is just the tip of the iceberg. The differences between interventional and observational conditionals can be a lot more nuanced and hard to characterize when there are lots of variables with complex interactions.
+
+https://towardsdatascience.com/implementing-causal-inference-a-key-step-towards-agi-de2cde8ea599
