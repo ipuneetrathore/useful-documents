@@ -1,0 +1,54 @@
+Sub DraftEmailsFromExcel()
+
+    Dim OutApp As Object
+    Dim OutMail As Object
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+
+    ' Set a reference to the active worksheet
+    Set ws = ThisWorkbook.ActiveSheet
+
+    ' Find the last row with data in column A (assuming your data starts from A)
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+
+    ' Create a new Outlook Application object
+    On Error GoTo ErrorHandler
+    Set OutApp = CreateObject("Outlook.Application")
+
+    ' Loop through each row starting from the second row (assuming headers in row 1)
+    For i = 2 To lastRow
+
+        ' Create a new Outlook MailItem object
+        Set OutMail = OutApp.CreateItem(0) ' 0 represents olMailItem
+
+        With OutMail
+            ' Assign values from Excel columns
+            .To = ws.Cells(i, "C").Value ' Column C for 'to'
+            .CC = ws.Cells(i, "D").Value ' Column D for 'cc'
+            .Subject = ws.Cells(i, "A").Value ' Column A for 'subject'
+            .HTMLBody = ws.Cells(i, "B").Value ' Column B for 'body' (using HTMLBody for better formatting)
+
+            ' Display the email (you can change this to .Send if you want to send automatically)
+            .Display ' This will open the email in a new window for review
+            ' .Send ' Uncomment this line and comment .Display if you want to send emails automatically
+        End With
+
+        ' Release the mail item object
+        Set OutMail = Nothing
+
+    Next i
+
+    ' Release the Outlook Application object
+    Set OutApp = Nothing
+
+    MsgBox "Emails drafted successfully!", vbInformation
+
+    Exit Sub
+
+ErrorHandler:
+    MsgBox "An error occurred: " & Err.Description, vbCritical
+    If Not OutMail Is Nothing Then Set OutMail = Nothing
+    If Not OutApp Is Nothing Then Set OutApp = Nothing
+
+End Sub
