@@ -52,3 +52,109 @@ ErrorHandler:
     If Not OutApp Is Nothing Then Set OutApp = Nothing
 
 End Sub
+
+
+
+
+========= Script 2 ===========
+
+
+Sub GenerateEmailsFromExcel()
+'
+' GenerateEmailsFromExcel Macro
+' This macro reads email data from the active Excel worksheet
+' and creates individual email drafts in Microsoft Outlook.
+'
+' IMPORTANT: Before running, ensure you have enabled the 'Microsoft Outlook XX.X Object Library'
+'            reference. (Go to Tools > References... in the VBA editor, and check it).
+'            XX.X will be your version of Outlook (e.g., 16.0 for Office 2016/365).
+'
+    Dim OutlookApp As Object           ' Declares an object variable for the Outlook Application.
+    Dim OutlookMail As Object          ' Declares an object variable for an Outlook MailItem.
+    Dim ws As Worksheet                ' Declares a worksheet object to refer to the active sheet.
+    Dim LastRow As Long                ' Variable to store the last row with data in the worksheet.
+    Dim i As Long                      ' Loop counter for iterating through rows.
+
+    Dim ToAddress As String            ' Stores the 'To' email address(es) from the Excel sheet.
+    Dim CcAddress As String            ' Stores the 'Cc' email address(es) from the Excel sheet.
+    Dim EmailSubject As String         ' Stores the email subject from the Excel sheet.
+    Dim EmailBody As String            ' Stores the email body content from the Excel sheet.
+
+    ' --- Error Handling ---
+    ' This line tells VBA to continue to the next line of code if an error occurs.
+    ' This is useful if Outlook isn't running or if there's a problem creating the object.
+    ' It's good practice to have more specific error handling in a production environment.
+    On Error Resume Next
+
+    ' Set the worksheet object to the currently active sheet.
+    Set ws = ThisWorkbook.ActiveSheet
+
+    ' Create a new instance of the Outlook Application object.
+    ' If Outlook is already open, it will use the existing instance.
+    Set OutlookApp = CreateObject("Outlook.Application")
+
+    ' Check if OutlookApp was successfully created.
+    If OutlookApp Is Nothing Then
+        MsgBox "Outlook application could not be started. Please ensure Outlook is installed and running.", vbCritical, "Outlook Error"
+        Exit Sub ' Exit the macro if Outlook can't be accessed.
+    End If
+
+    ' --- Find the last row with data ---
+    ' This finds the last row containing data in Column A (which is assumed to be the 'To' column).
+    ' Adjust 'Cells(Rows.Count, "A")' if your 'To' column is different (e.g., "B", "C", etc.).
+    LastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+
+    ' --- Loop through each row, starting from row 2 (assuming row 1 has headers) ---
+    For i = 2 To LastRow
+        ' Read data from the current row.
+        ' Adjust column indices (1 for A, 2 for B, 3 for C, 4 for D) as per your Excel layout.
+        ToAddress = ws.Cells(i, 1).Value      ' Column A: To
+        CcAddress = ws.Cells(i, 2).Value      ' Column B: Cc
+        EmailSubject = ws.Cells(i, 3).Value   ' Column C: Subject
+        EmailBody = ws.Cells(i, 4).Value      ' Column D: Body
+
+        ' Create a new MailItem (email) object in Outlook.
+        Set OutlookMail = OutlookApp.CreateItem(0) ' olMailItem constant is 0
+
+        ' Check if the MailItem was successfully created.
+        If Not OutlookMail Is Nothing Then
+            ' --- Populate the email properties ---
+            With OutlookMail
+                .To = ToAddress            ' Set the 'To' recipient(s).
+                .CC = CcAddress            ' Set the 'Cc' recipient(s).
+                .Subject = EmailSubject    ' Set the email subject.
+
+                ' For the body:
+                ' Use .HTMLBody for rich text, tables, and multiline text.
+                ' If your Excel 'Body' cell contains plain text with line breaks (Alt+Enter),
+                ' you might need to convert them to HTML <br> tags.
+                ' Example: .HTMLBody = Replace(EmailBody, Chr(10), "<br>")
+                ' If your Excel 'Body' cell *already* contains HTML, just assign it directly.
+                ' If it's plain text and you don't need rich formatting, use .Body instead:
+                ' .Body = EmailBody
+                .HTMLBody = EmailBody
+
+                ' --- Action for the email ---
+                ' .Display               ' Shows the email draft, allowing you to review before sending.
+                '                        ' Comment out .Display and uncomment .Send to send automatically.
+                .Display ' Keep this active for testing to review emails before sending.
+
+            End With
+        Else
+            MsgBox "Failed to create email item for row " & i & ". Skipping this row.", vbExclamation, "Email Creation Error"
+        End If
+
+        ' Clear the MailItem object to prepare for the next email.
+        Set OutlookMail = Nothing
+    Next i
+
+    ' --- Clean up ---
+    ' Disable error handling.
+    On Error GoTo 0
+
+    ' Release the Outlook Application object from memory.
+    Set OutlookApp = Nothing
+
+    MsgBox "Macro finished. Emails generated successfully (or drafts opened for review).", vbInformation, "Macro Complete"
+
+End Sub
